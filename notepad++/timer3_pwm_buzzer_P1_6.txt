@@ -1,0 +1,44 @@
+#include "iocc2530.h"
+//定時器初始化
+#define LED1 P1_6 
+void Delay(unsigned int t)
+{
+  while(t--);
+}
+/*void InitLed(void)
+{
+P1DIR |= 0x01;     //P1_0 定義為輸出
+LED1 = 1;          //LED1 燈初始化熄滅 
+}*/
+void InitT3()
+{  
+  P1SEL |=0x40;
+  PERCFG |=0x20;
+  
+  T3CTL &= ~0x08 ;    //關溢出中斷
+  //T3IE = 1;    //開總中斷和 T3中斷
+  T3CTL|=0xE0;    //128 分頻,128/16000000*N=0.5S,N=65200
+  T3CTL &= ~0x03;    //自動重裝 00－>0xff   65200/256=254(次)
+  T3CCTL0 &=~0x40;    //中斷禁止
+  T3CCTL0 |=0x1c;   //
+  //T3CC0=0xf0;
+  
+  T3CTL |=0X10; //   啟動
+  
+  //EA = 1;     //開總中斷
+ }
+
+void main(void)
+{
+  int rate[11]={0xF7,0xE1,0xC8,0xAF,0x96,0x7D,0x64,0x4B,0x32,0x19,0x0A};
+  InitT3();
+  while(1)
+  {
+     for(i=0;i<11;i++) 
+        { 
+          T3CC0=rate[i]; 
+          Delay(50000);
+
+        }
+  }
+}

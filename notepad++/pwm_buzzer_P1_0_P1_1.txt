@@ -1,0 +1,73 @@
+#include "ioCC2530.h"
+void Delay(unsigned int t)
+{
+  while(t--);
+}
+void PortInit() 
+{ 
+    P1SEL = 0x00;  //P1_0口設置為普通I/O口
+    P1DIR = 0x01;  //P1_0口設置為輸出模式
+} 
+void T1Init() 
+{ 
+    CLKCONCMD &= ~0x40; //設置系統時鐘源為32MHZ的晶振
+    while(CLKCONSTA & 0x40); //等待晶振穩定為32MHZ 
+    CLKCONCMD &= ~0x07; //設置系統主時鐘頻率為32MHZ 
+    CLKCONCMD |= 0x38; //定時器標記輸出為250KHZ     
+    
+    //定時器通道設置
+    P1SEL |= 0x03; //定時器1通道2映射至P1_0，功能選擇
+    PERCFG |= 0x43; //備用位置2，說明信息
+    P2SEL &= ~0x10; //相對於Timer4，定時器1優先
+    P2DIR |= 0xC0; //定時器通道2-3具有第一優先級
+    //P1DIR |= 0x03; 
+    
+    //定時器模式設置
+    T1CTL = 0x02; //250KHZ不分頻，模模式
+    T1CCTL1 = 0x1c;
+    //根據表7-1，此處P1_0口必須裝定時器1通道2進行比較
+    T1CCTL2 = 0x1C; //比較相等置1，計數器回0則清零
+    //裝定時器通道0初值
+    T1CC0H = 0x00; 
+    T1CC0L = 0xFA; //PWM信號周期為1ms，頻率為1KHZ 
+    //裝定時器通道2比較值
+    T1CC2H = 0x00; 
+    T1CC2L = 0x7D; //50%的正佔空比
+     T1CC1H = 0x00; 
+    T1CC1L = 0x7D; //50%的正佔空比
+    
+
+
+
+    //T1CC2L = 0x0A; //99%的正佔空比
+    //T1CC2L = 0x01; //設置通道2比較寄存器初值
+}
+void main()
+{
+int i; 
+
+    int rate[11]={0xF7,0xE1,0xC8,0xAF,0x96,0x7D,0x64,0x4B,0x32,0x19,0x0A};
+PortInit(); 
+
+    T1Init();
+while(1) 
+
+    { 
+
+          for(i=0;i<11;i++) 
+
+        { 
+		  T1CC1H = 0x00; 
+
+          T1CC1L = rate[i]; 
+		
+          T1CC2H = 0x00; 
+
+          T1CC2L = rate[i]; 
+
+         Delay(50000); 
+
+        }
+        }
+
+}
