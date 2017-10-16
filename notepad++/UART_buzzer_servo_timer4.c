@@ -135,16 +135,21 @@ void ExecuteTheOrder(){
 		break;
 		
 		case 0x32:
+                overtime_five_min=0;
                 UR0SendString("buzzer_ON\n");
-                while(sw1==1)
+                while(sw1==1 && overtime_five_min<6)
 	        {
                    buzzer();
+		   InitT4();
                 }
+                T4CTL &=~ 0x08 ;
+		overtime_five_min=0;
                 T3CC0=0x00;
-		servo2();
-		UR0SendString("servo2\n");
-                        
-                    
+                if(sw1==0)
+		{
+		  servo2();
+		  UR0SendString("servo2\n");
+		}    
 		break;
 	}
 }
