@@ -5,11 +5,7 @@ void Delay(unsigned int t)
 {
   while(t--);
 }
-/*void InitLed(void)
-{
-P1DIR |= 0x01;     //P1_0 定義為輸出
-LED1 = 1;          //LED1 燈初始化熄滅 
-}*/
+
 void InitT3()
 {  
   P1SEL |=0x40;
@@ -30,6 +26,7 @@ void InitT3()
 
 void main(void)
 {
+  int i;
   int rate[11]={0xF7,0xE1,0xC8,0xAF,0x96,0x7D,0x64,0x4B,0x32,0x19,0x0A};
   InitT3();
   while(1)
