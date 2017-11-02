@@ -33,13 +33,23 @@ void main()
   T1Init();
   set_main_clock();
   Init_UART0();
-  UR0SendString("connection\n");
-  
+  //overtime_five_min=0;
+ /* while(1)
+  {UR0SendString("1\n");
+  Delay(50000);
+  Delay(50000);
+  Delay(50000);
+  Delay(50000);
+  Delay(50000);
+  }*/
   while(1)
-  {
+{
+	 
+	// overtime_five_min=0;
     if(Flag == 1)      //是否收到上位機指令?
     {
-      ExecuteTheOrder();    //解析並運行指令
+      ExecuteTheOrder();    
+      //解析並運行指令
     }
   }
   
@@ -58,8 +68,8 @@ void Init_UART0(){
 	P0SEL = 0x0C;	//將P0_2、3 Port 設置成外設功能
 	P2DIR &= ~0x3F;	//P0外設優先級USART0最高
 	
-	U0BAUD = 59;	//16MHz的系統時鐘產生9600BPS鮑率
-	U0GCR = 9;
+	U0BAUD = 216 ;	//16MHz的系統時鐘產生9600BPS鮑率
+	U0GCR = 12;
 	
 	U0UCR |= 0x80;	//禁止流控，8bit數據，清除緩衝器
 	U0CSR |= 0x80;	//選擇UART模式(7)，致能接收器(6)
@@ -101,46 +111,84 @@ void UR0SendString(unsigned char *str){
 
 void ExecuteTheOrder(){
 	
-	Flag = 0;	//清除接收指令標誌
-	
+	Flag = 0;//清除接收指令標誌
+	Delay(500);
+        if(Flag == 0)
+        {
 	switch(DataRecieve){
 		
 		case 0x31:
+                  testLED =1;
+                  Delay(50000);
+                 Delay(50000);
+                  Delay(50000);
+                  testLED=0;
 		overtime_five_min=0;
-		UR0SendString("buzzer_ON\n");
-                while(sw1==1 && overtime_five_min<6)
+		//UR0SendString("buzzer_ON\n");
+                while(sw1==1 && overtime_five_min<130)
 	        {
                    buzzer();
+		   Flag=0;
 		   InitT4();
+                   testLED3=1;
+                   
                 }
-                T4CTL &=~ 0x08 ;
-		overtime_five_min=0;
-                T3CC0=0x00;
+                testLED3=0;
+                testLED2=1;
+                Delay(50000);
+                 Delay(50000);
+                  Delay(50000);
+                  testLED2=0;
+                T4CTL &=~ 0x08;  //關溢出中斷
+                T3CC0=0x00;     //讓比較值為0x00,蜂鳴器就不會叫。
+		//T4CC0=0x00;
+		overtime_five_min=0;    //T4計數值歸零
+                  Flag=0;
                 if(sw1==0)
 		{
-		  servo1();
-		  UR0SendString("servo1\n");
-		}
+                  Delay(500);
+                  if(sw1==0)
+                  {
+                    Delay(500);
+                    while(sw1==0);
+		  
+                  servo1();
+		  //UR0SendString("servo1\n");
+		   
+                }
+                }
 		break;
 		
 		case 0x32:
                 overtime_five_min=0;
-                UR0SendString("buzzer_ON\n");
-                while(sw1==1 && overtime_five_min<6)
+                //UR0SendString("buzzer_ON\n");
+                while(sw1==1 && overtime_five_min<130)
 	        {
                    buzzer();
+                   Flag=0;
 		   InitT4();
                 }
                 T4CTL &=~ 0x08 ;
-		overtime_five_min=0;
                 T3CC0=0x00;
+                //T4CC0=0x00;
+		overtime_five_min=0;
+                  Flag=0;
                 if(sw1==0)
 		{
-		  servo2();
-		  UR0SendString("servo2\n");
-		}    
+                  /*Delay(500);
+                  if(sw1==0)
+                  {
+                    Delay(500);
+                    while(sw1==0);*/
+		    servo2();
+                    //UR0SendString("servo2\n");
+                  
+                }
+		  
+		   
 		break;
 	}
+        }
 }
 
 void set_main_clock()
@@ -192,8 +240,8 @@ void T1Init()
 
 void InitT3()
 {  
-  P1SEL |=0x40;
-  PERCFG |=0x20;
+  P1SEL |=0x40;  //設1_6腳為外設腳位
+  PERCFG |=0x20; //設置timer3的位置
   
   T3CTL &= ~0x08 ;    //關溢出中斷
   T3CTL|=0xE0;    //128 分頻,128/16000000*N=0.5S,N=65200
@@ -213,25 +261,28 @@ T4CTL &= ~0X03;    //自動重裝 00－>0xff   65200/256=254(次)
 T4CTL |=0X10; //   啟動
 EA = 1;     //開總中斷	
 }
-#pragma vector = T4_VECTOR     //定時器 T3
+#pragma vector = T4_VECTOR     //定時器 T4
 __interrupt void T4_ISR(void)
 {
 IRCON = 0x00;    //清中斷標誌,也可由硬件自動完成
 if(++countsecond>254)   //254 次中斷後LED取反，閃爍一輪（約為0.5秒時間）
 {
+	
   countsecond = 0;   // 計數清零 
   overtime_five_min++;
-  if(overtime_five_min==6)
+  if(overtime_five_min==130)
   {
     UR0SendString("1\n");
+
   }
+ 
 }
 }
  
 void servo1()
 { 
-        T1CC2H = 0x07;
-        T1CC2L = 0x3a;
+        T1CC2H = 0x06;  //1.39
+        T1CC2L = 0x50;
         int i;
         for(i=0;i<23;i++)
         {
@@ -243,8 +294,8 @@ void servo1()
 
 void servo2()
 { 
-        T1CC2H = 0x07;
-        T1CC2L = 0x3a;
+        T1CC2H = 0x06;  //1.39
+        T1CC2L = 0x50;
         int i;
         for(i=0;i<44;i++)
         {
