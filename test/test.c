@@ -272,7 +272,7 @@ if(++countsecond>254)   //254 次中斷後LED取反，閃爍一輪（約為0.5秒時間）
   overtime_five_min++;
   if(overtime_five_min==130)
   {
-    UR0SendString("1\n");
+    UR0SendString("A\n");
 
   }
  
